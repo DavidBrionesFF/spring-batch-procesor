@@ -1,5 +1,6 @@
 package com.bytecode.springbatch.model;
 
+//Este es el modelo con los correspondientes datos del csv
 public class Persona {
     private String nombre;
     private String apellido;

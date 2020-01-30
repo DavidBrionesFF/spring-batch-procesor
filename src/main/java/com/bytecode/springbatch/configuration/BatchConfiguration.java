@@ -1,6 +1,7 @@
 package com.bytecode.springbatch.configuration;
 
 import com.bytecode.springbatch.model.Persona;
+import com.bytecode.springbatch.proccesing.PersonaProcessor;
 import com.mongodb.MongoClient;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -28,6 +29,7 @@ import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
 
+//Habilitamos el proceso Batch y Configuramos
 @Configuration
 @EnableBatchProcessing
 public class BatchConfiguration {
@@ -43,6 +45,7 @@ public class BatchConfiguration {
     @Autowired
     private StepBuilderFactory stepBuilderFactory;
 
+    //El item writer se encarga de escribir, en este caso usamos la implementacion de mongodb
     @Bean
     public ItemWriter<Persona> writer() {
         MongoItemWriter<Persona> writer = new MongoItemWriter<Persona>();
@@ -58,6 +61,7 @@ public class BatchConfiguration {
     @Value("classpath:file.csv")
     private Resource resource;
 
+    //El item reader se encarga de leer los datos, en este caso usamos un csv, que luego se transforma en persona
     @Bean
     public ItemReader<Persona> reader(){
         FlatFileItemReader<Persona> reader = new FlatFileItemReader<Persona>();
@@ -85,14 +89,18 @@ public class BatchConfiguration {
         return reader;
     }
 
+
+    //Declaramos el paso, leer procesar y escribir, ademas el nombre del paso y cuantos chunk utilizaremos
     @Bean
     public Step step1() {
         return stepBuilderFactory.get("step1").<Persona, Persona>chunk(5)
                 .reader(reader())
                 .writer(writer())
+                .processor(new PersonaProcessor())
                 .build();
     }
 
+    //Creamos el job pasandole los pasos
     @Bean
     public Job readCSVFilesJob() {
         return jobBuilderFactory
@@ -102,6 +110,7 @@ public class BatchConfiguration {
                 .build();
     }
 
+    //Conexion a la base de datos
     @Bean
     public MongoDbFactory mongoDbFactory() throws Exception {
         return new SimpleMongoDbFactory(new MongoClient(), environment.getProperty("spring.data.mongodb.database"));
